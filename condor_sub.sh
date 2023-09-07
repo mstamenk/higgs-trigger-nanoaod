@@ -25,4 +25,4 @@ ls -lrth $X509_USER_PROXY
 voms-proxy-info -all
 
 # run cmd
-python HLT_HT_BTAG_condor.py --era ${ERA} --version ${TRIGGER} --input ${SAMPLE} --outdir ./histofiles/tmp/${ERA} --id ${ID}
+python HLT_HT_BTAG_condor.py --era ${ERA} --version ${TRIGGER} --input ${SAMPLE} --outdir ./histofiles_Sep2023/tmp/${ERA} --id ${ID}

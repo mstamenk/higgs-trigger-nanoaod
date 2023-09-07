@@ -11,12 +11,21 @@ declare -A TRIGGERS_PER_ERA
 #TRIGGERS_PER_ERA["22E"]="PNetbb"
 #TRIGGERS_PER_ERA["22F"]="PNetbb"
 
-TRIGGERS_PER_ERA["22B"]="PNetbb"
-TRIGGERS_PER_ERA["22C"]="PNetbb"
-TRIGGERS_PER_ERA["22D"]="PNetbb"
-TRIGGERS_PER_ERA["22E"]="PNetbb"
-TRIGGERS_PER_ERA["22F"]="PNetbb"
-TRIGGERS_PER_ERA["22G"]="PNetbb"
+#TRIGGERS_PER_ERA["22B"]="PNetbb DoublePhoton"
+#TRIGGERS_PER_ERA["22C"]="PNetbb DoublePhoton"
+#TRIGGERS_PER_ERA["22D"]="PNetbb DoublePhoton"
+#TRIGGERS_PER_ERA["22E"]="PNetbb DoublePhoton"
+#TRIGGERS_PER_ERA["22F"]="PNetbb DoublePhoton"
+#TRIGGERS_PER_ERA["22G"]="PNetbb DoublePhoton"
+
+#TRIGGERS_PER_ERA["22all"]="PNetbb DoublePhoton"
+#TRIGGERS_PER_ERA["23all"]="PNetbb DoublePhoton"
+TRIGGERS_PER_ERA["22all"]="DoublePhoton"
+#TRIGGERS_PER_ERA["23all"]="PNetbb DoublePhoton"
+
+#TRIGGERS_PER_ERA["23C"]="DoublePhoton"
+#TRIGGERS_PER_ERA["23D"]="DoublePhoton"
+
 
 #TRIGGERS_PER_ERA["22B"]="PNetbb PNetref DoublePhoton90 Quad1btag Quad2btag PFHT DoublePF"
 #TRIGGERS_PER_ERA["22C"]="PNetbb PNetref DoublePhoton90 Quad1btag Quad2btag PFHT DoublePF"
@@ -45,27 +54,27 @@ do
     for trigger in ${TRIGGERS_PER_ERA[${era}]}
     do
 	echo ${era} $trigger
-	if [[ "$trigger" == "DoublePhoton90" ]]
+	if [[ "$trigger" == "DoublePhoton" ]]
 	then
-	    if [[ "$era" == *"22"* ]]
-	    then
-		FILE_LIST=${DATA_DIR}/Run${era}_JetMET.txt
-	    else
-		FILE_LIST=${DATA_DIR}/Run${era}_JetHT.txt
-	    fi
+	    #if [[ "$era" == *"22"* ]]
+	    #then
+	    FILE_LIST=${DATA_DIR}/Run${era}_JetMET.txt
+	    #else
+	    #	FILE_LIST=${DATA_DIR}/Run${era}_JetHT.txt
+	    #fi
 	else
-	    if [[ "$era" == *"22"* ]]
-	    then
-		FILE_LIST=${DATA_DIR}/Run${era}_Muon.txt
-	    else
-		FILE_LIST=${DATA_DIR}/Run${era}_SingleMuon.txt
-	    fi
+	    #if [[ "$era" == *"22"* ]]
+	    #then
+	    FILE_LIST=${DATA_DIR}/Run${era}_Muon.txt
+	    #else
+	    #	FILE_LIST=${DATA_DIR}/Run${era}_SingleMuon.txt
+	    #fi
 	fi
 
 	JOB_ID=0
 	cat $FILE_LIST | while read line
 	do
-	    EXPECTED_OUT=histofiles/tmp/${era}/goodfiles/histos_Run${era}_${trigger}_${JOB_ID}.tightpt.root
+	    EXPECTED_OUT=histofiles_Sep2023/tmp/${era}/goodfiles/histos_Run${era}_${trigger}_${JOB_ID}.root
 	    (( NTOT++ ))
 	    echo $NSUB / $NTOT
 	    if [ -f "$EXPECTED_OUT" ]; then

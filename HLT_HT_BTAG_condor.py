@@ -47,7 +47,7 @@ def get_path_dict(year):
             'DoublePFMuon'    : 'Mu12_DoublePFJets40MaxDeta1p6_DoublePFBTagDeepJet_p71',
             'DoublePF'        : 'DoublePFJets128MaxDeta1p6_DoublePFBTagDeepJet_p71', # selection OK
             'Quad2btag'       : 'QuadPFJet103_88_75_15_DoublePFBTagDeepJet_1p3_7p7_VBF1', #selection ok
-            'DoublePhoton90'  : 'Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90', # selection OK
+            'DoublePhoton'  : 'Diphoton30_22_R9Id_OR_IsoCaloId_AND_HE_R9Id_Mass90', # selection OK
             'PNetref'         : 'AK8PFJet230_SoftDropMass40', # selection ok
             'PNetbb'          : 'AK8PFJet250_SoftDropMass40_PFAK8ParticleNetBB0p35', #selection ok
             'PNettautau'      : 'AK8PFJet230_SoftDropMass40_PFAK8ParticleNetTauTau0p30',
@@ -77,8 +77,8 @@ class TrigBtagAnalysis(Module):
         Module.beginJob(self,histFile,histDirName)
         version =  str(histFile.GetName()).replace('histos_BTagTrigNanoAOD_RunD_','').replace('.root','')
         print('version: {}'.format(version))
-        self.version = version.split('_')[2]
-        self.period = version.split('_')[1]
+        self.version = version.split('_')[3]
+        self.period = version.split('_')[2]
         print("VERSION: {}".format(self.version), " PERIOD: {}".format(self.period))
 
         ################################
@@ -201,7 +201,7 @@ class TrigBtagAnalysis(Module):
         # Selection
         pass_selection = False
         self.h_cutflow.Fill(0)
-
+        #print("version=",version)
         ################################################################################################################
         if 'PFHT' in version: ### OK
             triggerVersion = 'PFHT'
@@ -252,7 +252,8 @@ class TrigBtagAnalysis(Module):
                 mass = 0
             else:
                 mass = int(strmass)
-            pass_selection_npv  = sel_doublephoton_forNpv(mass,photons)
+            #pass_selection_npv  = sel_doublephoton_forNpv(mass,photons)
+            pass_selection_npv  = sel_doublephoton_forNpv(90,photons)
             pass_selection_mass = sel_doublephoton_forMass(photons)
             phots = [p for p in photons if (p.pt > 15 and abs(p.eta) < 1.4442)]
             phots.sort(key = lambda x: x.pt, reverse = True)
@@ -263,9 +264,9 @@ class TrigBtagAnalysis(Module):
             triggerVersion = 'PNetbb'
             if 'PNet_ref' in version:
                 triggerVersion = 'PNet_ref'
-            pass_selection_npv  = sel_pnet_forNpv(fatjets)
-            pass_selection_pt   = sel_pnet_pt_turnon(fatjets)
-            pass_selection_mass = sel_pnet_mass_turnon(fatjets)
+            pass_selection_npv  = sel_pnet_forNpv(fatjets,self.period)
+            pass_selection_pt   = sel_pnet_pt_turnon(fatjets,self.period)
+            pass_selection_mass = sel_pnet_mass_turnon(fatjets,self.period)
             pass_selection_tag  = sel_pnet_tag_turnon(fatjets)
             pass_selection = pass_selection_npv or pass_selection_pt or pass_selection_tag or pass_selection_mass
 
@@ -399,9 +400,13 @@ class TrigBtagAnalysis(Module):
                 if sigAccept:
                     self.h_passtrig.Fill(ak8jets[0].pt)
             if pass_selection_tag:
-                self.h_tag_all.Fill(ak8jets[0].particleNet_HbbvsQCD )
+                if '23' in self.period:
+                    pnetscore = ak8jets[0].particleNetWithMass_HbbvsQCD
+                else:
+                    pnetscore = ak8jets[0].particleNet_HbbvsQCD
+                self.h_tag_all.Fill(pnetscore )
                 if sigAccept:
-                    self.h_tag_passtrig.Fill(ak8jets[0].particleNet_HbbvsQCD)
+                    self.h_tag_passtrig.Fill(pnetscore)
             if pass_selection_mass:
                 self.h_mass_all.Fill(ak8jets[0].msoftdrop )
                 if sigAccept:
@@ -423,10 +428,17 @@ class TrigBtagAnalysis(Module):
 
         else:
             self.h_all.Fill(ak8jets[0].pt)
-            self.h_pnet_all.Fill(ak8jets[0].particleNet_HbbvsQCD )
+            if '23' in self.period:
+                pnetscore = ak8jets[0].particleNetWithMass_HbbvsQCD
+            else:
+                pnetscore = ak8jets[0].particleNet_HbbvsQCD
+            self.h_tag_all.Fill(pnetscore )
+            if sigAccept:
+                self.h_tag_passtrig.Fill(pnetscore)
+            self.h_pnet_all.Fill(pnetscore )
             if sigAccept:
                 self.h_passtrig.Fill(ak8jets[0].pt)
-                self.h_pnet_passtrig.Fill(ak8jets[0].particleNet_HbbvsQCD)
+                self.h_pnet_passtrig.Fill(pnetscore)
 
         return True
 
@@ -445,6 +457,7 @@ if __name__ == "__main__":
 
     path_json = './data/golden_json/'
     jsons = {
+        '22all' : 'Cert_Collisions2022_355100_362760_Golden.json',
         '22B': 'Cert_Collisions2022_eraB_355100_355769_Golden.json',
         '22C': 'Cert_Collisions2022_eraC_355862_357482_Golden.json',
         '22D': 'Cert_Collisions2022_eraD_357538_357900_Golden.json',
@@ -458,20 +471,34 @@ if __name__ == "__main__":
     files = ['root://cms-xrd-global.cern.ch/' + args.input if '/store/' in args.input else args.input]
     print(files)
 
-    histFile = "{}/histos_Run{}_{}_{}.root".format(args.outdir,args.era,args.version,args.id)
-
-    p=PostProcessor(
-        ".",
-        files,
-        cut=preselection,
-        branchsel=None,
-        modules=[TrigBtagAnalysis()],
-        noOut=True,
-        histFileName=histFile,
-        histDirName="BTagNanoAOD",
-        jsonInput= path_json + '' + jsons[args.era],
-        #prefetch=True
-    )
+    histFile = "{}/histos_Run{}_{}_{}.photonpt30.root".format(args.outdir,args.era,args.version,args.id)
+    if '22' in args.era:
+        p=PostProcessor(
+            ".",
+            files,
+            cut=preselection,
+            branchsel=None,
+            modules=[TrigBtagAnalysis()],
+            noOut=True,
+            histFileName=histFile,
+            histDirName="BTagNanoAOD",
+            jsonInput= path_json + '' + jsons[args.era],
+            #prefetch=True
+        )
+    else:
+        p=PostProcessor(
+            ".",
+            files,
+            cut=preselection,
+            branchsel=None,
+            modules=[TrigBtagAnalysis()],
+            noOut=True,
+            histFileName=histFile,
+            histDirName="BTagNanoAOD",
+            #jsonInput= path_json + '' + jsons[args.era],
+            #prefetch=True
+        )
+        
 
     p.run()
 

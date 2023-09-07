@@ -34,11 +34,15 @@ def pass_nfatjet(njetmin,ptmin,fatjets):
     ak8jets = [j for j in fatjets if (j.pt>ptmin and abs(j.eta)<2.4)]
     return (len(ak8jets) >= njetmin)
     
-def pass_Ntag_AK8PNetBB(njet,fatjets):
+def pass_Ntag_AK8PNetBB(njet,fatjets, year):
     # checking that at least N fatjets have PNetBB score > 0.4
     ak8jets = [j for j in fatjets if j.pt > 15 and abs(j.eta) < 2.4]
-    ak8jets.sort(key = lambda x: x.particleNet_HbbvsQCD, reverse = True)
-    return(ak8jets[njet-1].particleNet_HbbvsQCD>0.4)
+    if "23" in year:
+        ak8jets.sort(key = lambda x: x.particleNet_HbbvsQCD, reverse = True)
+        return(ak8jets[njet-1].particleNetWithMass_HbbvsQCD>0.4)
+    else:
+        ak8jets.sort(key = lambda x: x.particleNet_HbbvsQCD, reverse = True)
+        return(ak8jets[njet-1].particleNetWithMass_HbbvsQCD>0.4)
 
 def pass_mass_fatjet(massmin,fatjets):
     ak8jets = [j for j in fatjets if (j.msoftdrop>massmin and abs(j.eta)<2.4)]
@@ -224,24 +228,37 @@ def sel_quad1btag_forNpv(jets):
 ##############################
 # selections for PNetBB path #
 ##############################
-def sel_pnet_mass_turnon(fatjets):
+def sel_pnet_mass_turnon(fatjets,year):
     ak8jets = [j for j in fatjets if (j.pt>15 and abs(j.eta)<2.4)]
     if len(ak8jets)==0:
         return False
-    j1 = ak8jets[0]
-    ak8jets.sort(key = lambda x: x.particleNet_HbbvsQCD, reverse = True)
-    bj1 = ak8jets[0]
-    return (j1.pt>300. and bj1.particleNet_HbbvsQCD>0.8)
-    
-def sel_pnet_pt_turnon(fatjets):
-    ak8jets = [j for j in fatjets if (j.pt>15 and abs(j.eta)<2.4)]
-    if len(ak8jets)==0:
-        return False
-    j1 = ak8jets[0]
-    ak8jets.sort(key = lambda x: x.particleNet_HbbvsQCD, reverse = True)
-    bj1 = ak8jets[0]
-    return (j1.msoftdrop>60. and bj1.particleNet_HbbvsQCD>0.8)
+    if not '23' in year:
+        j1 = ak8jets[0]
+        ak8jets.sort(key = lambda x: x.particleNet_HbbvsQCD, reverse = True)
+        bj1 = ak8jets[0]
+        return (j1.pt>300. and bj1.particleNet_HbbvsQCD>0.8)
+    else:
+        j1 = ak8jets[0]
+        ak8jets.sort(key = lambda x: x.particleNetWithMass_HbbvsQCD, reverse = True)
+        bj1 = ak8jets[0]
+        return (j1.pt>300. and bj1.particleNetWithMass_HbbvsQCD>0.8)
+        
 
+def sel_pnet_pt_turnon(fatjets,year):
+    ak8jets = [j for j in fatjets if (j.pt>15 and abs(j.eta)<2.4)]
+    if len(ak8jets)==0:
+        return False
+    if not '23' in year:
+        j1 = ak8jets[0]
+        ak8jets.sort(key = lambda x: x.particleNet_HbbvsQCD, reverse = True)
+        bj1 = ak8jets[0]
+        return (j1.msoftdrop>60. and bj1.particleNet_HbbvsQCD>0.8)
+    else:
+        j1 = ak8jets[0]
+        ak8jets.sort(key = lambda x: x.particleNetWithMass_HbbvsQCD, reverse = True)
+        bj1 = ak8jets[0]
+        return (j1.msoftdrop>60. and bj1.particleNetWithMass_HbbvsQCD>0.8)
+        
 def sel_pnet_tag_turnon(fatjets):
     ak8jets = [j for j in fatjets if (j.pt>15 and abs(j.eta)<2.4)]
     if len(ak8jets)==0:
@@ -249,14 +266,20 @@ def sel_pnet_tag_turnon(fatjets):
     j1 = ak8jets[0]
     return (j1.msoftdrop>60. and j1.pt>300.)
 
-def sel_pnet_forNpv(fatjets):
+def sel_pnet_forNpv(fatjets,year):
     ak8jets = [j for j in fatjets if (j.pt>15 and abs(j.eta)<2.4)]
     if len(ak8jets)==0:
         return False
-    j1 = ak8jets[0]
-    ak8jets.sort(key = lambda x: x.particleNet_HbbvsQCD, reverse = True)
-    bj1 = ak8jets[0]
-    return (j1.msoftdrop>60. and j1.pt>300. and bj1.particleNet_HbbvsQCD>0.8)
+    if not '23' in year:
+        j1 = ak8jets[0]
+        ak8jets.sort(key = lambda x: x.particleNet_HbbvsQCD, reverse = True)
+        bj1 = ak8jets[0]
+        return (j1.msoftdrop>60. and j1.pt>300. and bj1.particleNet_HbbvsQCD>0.8)
+    else:
+        j1 = ak8jets[0]
+        ak8jets.sort(key = lambda x: x.particleNetWithMass_HbbvsQCD, reverse = True)
+        bj1 = ak8jets[0]
+        return (j1.msoftdrop>60. and j1.pt>300. and bj1.particleNetWithMass_HbbvsQCD>0.8)
 ##############################
 
 
@@ -284,7 +307,7 @@ TO DO
 # selections for DoublePhoton(_mX) path #
 ########################################
 def sel_doublephoton_forNpv(mass,photons):
-    phots = [p for p in photons if (p.pt > 15 and abs(p.eta) < 1.4442)]
+    phots = [p for p in photons if (p.pt > 30 and abs(p.eta) < 1.4442)]
     phots.sort(key = lambda x: x.pt, reverse = True)
     if len(phots) < 2:
         return False
@@ -303,7 +326,7 @@ def sel_doublephoton_forNpv(mass,photons):
     return (myy>mass and p1.cutBased>2 and p2.cutBased>2)
 
 def sel_doublephoton_forMass(photons):
-    phots = [p for p in photons if (p.pt > 15 and abs(p.eta) < 1.4442)]
+    phots = [p for p in photons if (p.pt > 30 and abs(p.eta) < 1.4442)]
     phots.sort(key = lambda x: x.pt, reverse = True)
     if len(phots) < 2:
         return False
